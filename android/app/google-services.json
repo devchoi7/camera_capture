@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "510351097070",
+    "project_id": "camera-capture-2023-09-20",
+    "storage_bucket": "camera-capture-2023-09-20.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510351097070:android:8e497db8e951792e6787ff",
+        "android_client_info": {
+          "package_name": "com.example.camera_capture"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzR2SFRrjXJ1h2zfYFXgaeG9lrPY8UPEQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
