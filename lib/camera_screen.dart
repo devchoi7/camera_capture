@@ -1,32 +1,33 @@
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
+import 'display_photo_screen.dart';
+import 'fetch_server.dart';
 import 'location.dart';
-import 'photo_view.dart';
 
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  const CameraScreen({super.key, required this.camera});
+  final CameraDescription camera;
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  XFile? file;
+  late CameraController controller;
+  late Future<void> initializeControllerFuture;
+  XFile? image;
+  String imagePath = '';
   String imageUrl = '';
   final commentController = TextEditingController();
   double latitude = 0;
   double longitude = 0;
 
   Future getImage() async {
-    XFile? file = await ImagePicker().pickImage(source: ImageSource.camera);
-
-    if (file == null) return;
-
     String uniqueFileName = DateTime.now().millisecondsSinceEpoch.toString();
 
     Reference referenceRoot = FirebaseStorage.instance.ref();
@@ -35,7 +36,15 @@ class _CameraScreenState extends State<CameraScreen> {
     Reference referenceImageToUpload = referenceDirImages.child(uniqueFileName);
 
     try {
-      await referenceImageToUpload.putFile(File(file.path));
+      await initializeControllerFuture;
+      controller.setFlashMode(FlashMode.off);
+      final image = await controller.takePicture();
+
+      if (!mounted) return;
+
+      imagePath = image.path;
+
+      await referenceImageToUpload.putFile(File(imagePath));
       imageUrl = await referenceImageToUpload.getDownloadURL();
     } catch (e) {
       debugPrint(e.toString());
@@ -44,7 +53,9 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future uploadData() async {
     Map<String, String> uploadData = {
-      'comment': commentController.text,
+      'comment': commentController.text.trim() == ''
+          ? 'Без комментариев'
+          : commentController.text,
       'image': imageUrl,
       'latitude': '$latitude',
       'longitude': '$longitude',
@@ -58,40 +69,6 @@ class _CameraScreenState extends State<CameraScreen> {
     }
   }
 
-  Widget showImage() {
-    return Container(
-      color: Colors.lightGreen.shade100,
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      child: Center(
-          child: (file == null)
-              ? const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Сначала напишите комментарий, а потом фотографируйте!\n\n\nИ посмотрите на свою работу!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              : const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                    'Здесь будут отображаться фотографии, комментарии и информация о местоположении камеры, хранящиеся на сервере Firebase.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )),
-    );
-  }
-
   void getCameraLocation() async {
     final location = await Location().getLocation();
     latitude = location.latitude;
@@ -102,6 +79,15 @@ class _CameraScreenState extends State<CameraScreen> {
   void initState() {
     super.initState();
     getCameraLocation();
+    controller = CameraController(widget.camera, ResolutionPreset.medium);
+    initializeControllerFuture = controller.initialize();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    commentController.dispose();
+    super.dispose();
   }
 
   @override
@@ -114,61 +100,95 @@ class _CameraScreenState extends State<CameraScreen> {
         ),
         useMaterial3: true,
       ),
-      home: Builder(builder: (context) {
-        return Scaffold(
-          appBar: AppBar(
-            elevation: 10,
-            title: const Text('На долгую память!'),
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Expanded(
-                  child: showImage(),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  textAlignVertical: TextAlignVertical.center,
-                  controller: commentController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Комментарий:',
-                    hintText: 'Одно слово на память...',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton.icon(
-                      label: const Text('Фотографировать'),
-                      icon: const Icon(Icons.camera_alt),
-                      onPressed: () async {
-                        await getImage();
-                        await uploadData();
-                        commentController.text = '';
-                      },
-                    ),
-                    ElevatedButton.icon(
-                      label: const Text('Посмотреть'),
-                      icon: const Icon(Icons.photo),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PhotoView(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ],
+      home: Builder(
+        builder: (context) {
+          return Scaffold(
+            appBar: AppBar(
+              elevation: 10,
+              title: const Text('На долгую память!'),
             ),
-          ),
-        );
-      }),
+            body: Padding(
+                padding: const EdgeInsets.all(10),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      FutureBuilder<void>(
+                        future: initializeControllerFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            return AspectRatio(
+                              aspectRatio: 3 / 4,
+                              child: CameraPreview(controller),
+                            );
+                          } else {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+                        child: TextField(
+                          textAlignVertical: TextAlignVertical.center,
+                          controller: commentController,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Комментарий:',
+                            hintText: 'На память...',
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          ElevatedButton.icon(
+                            label: const Text('Фотографировать\nи сохранить'),
+                            icon: const Icon(Icons.camera_alt),
+                            onPressed: () async {
+                              const snackBar = SnackBar(
+                                  duration: Duration(seconds: 5),
+                                  content: Text(
+                                    'Фото и комментарий загружаются!',
+                                    textAlign: TextAlign.center,
+                                  ));
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(snackBar);
+                              await getImage();
+                              await uploadData();
+                              commentController.text = '';
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              // ignore: use_build_context_synchronously
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => DisplayPhotoScreen(
+                                    imagePath: imagePath,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          ElevatedButton.icon(
+                            label: const Text('Посмотреть\nвсе фото'),
+                            icon: const Icon(Icons.photo),
+                            onPressed: () {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FetchServer(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )),
+          );
+        },
+      ),
     );
   }
 }

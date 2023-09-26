@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +10,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  final cameras = await availableCameras();
+  final camera = cameras.first;
 
-  runApp(const CameraScreen());
+  runApp(CameraScreen(camera: camera));
 }

@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class PhotoView extends StatefulWidget {
-  const PhotoView({super.key});
+class FetchServer extends StatefulWidget {
+  const FetchServer({super.key});
 
   @override
-  State<PhotoView> createState() => _PhotoViewState();
+  State<FetchServer> createState() => _FetchServerState();
 }
 
-class _PhotoViewState extends State<PhotoView> {
+class _FetchServerState extends State<FetchServer> {
   CollectionReference referenceCameraCapture =
       FirebaseFirestore.instance.collection('camera_capture');
 
@@ -51,31 +51,32 @@ class _PhotoViewState extends State<PhotoView> {
                 .toList();
 
             return Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: ListView.builder(
+              padding: const EdgeInsets.all(10),
+              child: ListView.separated(
                 itemCount: items.length,
+                separatorBuilder: (context, index) => const Divider(),
                 itemBuilder: (context, index) {
                   Map item = items[index];
                   return Row(
                     children: [
                       item.containsKey('image')
-                          ? SizedBox(
-                              width: 100,
-                              height: 150,
-                              child: Image.network(
-                                '${item['image']}',
-                                frameBuilder: (_, image, loadingBuilder, __) {
-                                  if (loadingBuilder == null) {
-                                    return const SizedBox(
-                                      width: 100,
-                                      height: 150,
-                                      child: Center(
-                                          child: CircularProgressIndicator()),
-                                    );
-                                  }
-                                  return image;
-                                },
-                              ),
+                          ? Image.network(
+                              '${item['image']}',
+                              fit: BoxFit.cover,
+                              frameBuilder: (_, image, loadingBuilder, __) {
+                                if (loadingBuilder == null) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.green),
+                                  ),
+                                  width: 90,
+                                  height: 120,
+                                  child: image,
+                                );
+                              },
                             )
                           : const Text('Нет изображения!'),
                       const SizedBox(width: 20),
