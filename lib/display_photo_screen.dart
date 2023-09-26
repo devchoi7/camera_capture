@@ -17,25 +17,30 @@ class DisplayPhotoScreen extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.green,
+            Expanded(
+              flex: 8,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.green,
+                  ),
                 ),
-              ),
-              child: Image.file(
-                File(imagePath),
-                fit: BoxFit.cover,
+                child: Image.file(
+                  File(imagePath),
+                  fit: BoxFit.fitHeight,
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Фото и комментарий сохранены на сервере с местоположением камеры!',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+            const Expanded(
+              child: Text(
+                'Фото и комментарий сохранены на сервере с местоположением камеры!',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

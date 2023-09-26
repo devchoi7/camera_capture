@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -79,7 +81,7 @@ class _CameraScreenState extends State<CameraScreen> {
   void initState() {
     super.initState();
     getCameraLocation();
-    controller = CameraController(widget.camera, ResolutionPreset.medium);
+    controller = CameraController(widget.camera, ResolutionPreset.high);
     initializeControllerFuture = controller.initialize();
   }
 
@@ -149,7 +151,7 @@ class _CameraScreenState extends State<CameraScreen> {
                               const snackBar = SnackBar(
                                   duration: Duration(seconds: 5),
                                   content: Text(
-                                    'Фото и комментарий загружаются!',
+                                    'Загрузка... Пожалуйста, подождите!',
                                     textAlign: TextAlign.center,
                                   ));
                               ScaffoldMessenger.of(context)
@@ -158,7 +160,6 @@ class _CameraScreenState extends State<CameraScreen> {
                               await uploadData();
                               commentController.text = '';
                               FocusManager.instance.primaryFocus?.unfocus();
-                              // ignore: use_build_context_synchronously
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (context) => DisplayPhotoScreen(

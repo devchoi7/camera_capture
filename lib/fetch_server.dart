@@ -59,26 +59,67 @@ class _FetchServerState extends State<FetchServer> {
                   Map item = items[index];
                   return Row(
                     children: [
-                      item.containsKey('image')
-                          ? Image.network(
-                              '${item['image']}',
-                              fit: BoxFit.cover,
-                              frameBuilder: (_, image, loadingBuilder, __) {
-                                if (loadingBuilder == null) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.green),
-                                  ),
-                                  width: 90,
-                                  height: 120,
-                                  child: image,
-                                );
-                              },
-                            )
-                          : const Text('Нет изображения!'),
+                      if (item.containsKey('image'))
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    fullscreenDialog: true,
+                                    builder: (BuildContext context) {
+                                      return Scaffold(
+                                        backgroundColor:
+                                            Colors.lightGreen.shade100,
+                                        body: SafeArea(
+                                          child: GestureDetector(
+                                            child: Center(
+                                              child: SizedBox(
+                                                height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.9,
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.9,
+                                                child: Hero(
+                                                  tag: 'imageHero',
+                                                  child: Image.network(
+                                                    '${item['image']}',
+                                                    fit: BoxFit.fill,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    }));
+                          },
+                          child: Image.network(
+                            '${item['image']}',
+                            fit: BoxFit.cover,
+                            frameBuilder: (_, image, loadingBuilder, __) {
+                              if (loadingBuilder == null) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              return Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.green),
+                                ),
+                                width: 90,
+                                height: 120,
+                                child: image,
+                              );
+                            },
+                          ),
+                        )
+                      else
+                        const Text('Нет изображения!'),
                       const SizedBox(width: 20),
                       Expanded(
                         child: Column(
